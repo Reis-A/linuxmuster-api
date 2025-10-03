@@ -1,3 +1,6 @@
+#this is a fork of the linuxmuster-api where the api is adapted to a different backend (novell edirectory)
+it is work in progress and just an attempt at the moment. it probably wont be working for a while...
+
 # linuxmuster-api
 
 Linuxmuster API is the main evolution for the next linuxmuster.net's server, version 8.
