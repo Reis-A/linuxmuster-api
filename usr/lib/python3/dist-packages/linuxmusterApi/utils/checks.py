@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 
-from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+#from linuxmusterTools.ldapconnector import LMNLdapReader as lr
 
 
 def get_user_or_404(user, school):

@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
 
 from security import RoleChecker, AuthenticatedUser
-from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+#from linuxmusterTools.ldapconnector import LMNLdapReader as lr
 from utils.checks import get_schoolclass_or_404
 from utils.sophomorix import lmn_getSophomorixValue
-from linuxmusterTools.print import print_schoolclass_list
+#from linuxmusterTools.print import print_schoolclass_list
 
 
 router = APIRouter(

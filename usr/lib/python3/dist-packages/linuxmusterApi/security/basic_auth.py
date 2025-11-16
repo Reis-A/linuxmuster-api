@@ -6,7 +6,7 @@ import base64
 import yaml
 from typing_extensions import Annotated
 
-from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+#from linuxmusterTools.ldapconnector import LMNLdapReader as lr
 
 
 BASIC_AUTH = HTTPBasic()

@@ -2,14 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from security import RoleChecker, UserChecker, AuthenticatedUser, UserListChecker
 from .body_schemas import SetFirstPassword, SetCurrentPassword, UserList, User
-from linuxmusterTools.ldapconnector import LMNLdapReader as lr
-from linuxmusterTools.ldapconnector import LMNUser, LMNStudent
-from linuxmusterTools.samba_util import UserManager
-import linuxmusterTools.quotas
+#from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+#from linuxmusterTools.ldapconnector import LMNUser, LMNStudent
+#from linuxmusterTools.samba_util import UserManager
+#import linuxmusterTools.quotas
 from utils.checks import get_user_or_404
 
 
-user_manager = UserManager()
+#user_manager = UserManager()
 
 router = APIRouter(
     prefix="/users",

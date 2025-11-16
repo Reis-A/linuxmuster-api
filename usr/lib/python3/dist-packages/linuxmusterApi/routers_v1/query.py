@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from security import RoleChecker, AuthenticatedUser
-from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+#from linuxmusterTools.ldapconnector import LMNLdapReader as lr
 
 
 router = APIRouter(
