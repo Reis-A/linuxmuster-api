@@ -61,7 +61,7 @@ def get_user(user: str, check_first_pw: bool = False, who: AuthenticatedUser = D
 
 
     user_details = get_user_or_404(user, who.school)
-
+    '''
     if check_first_pw:
         user_details = lr.get(f'/users/{user}', dict=False, school=who.school)
         first_pw_set = user_details.test_first_password()
@@ -69,7 +69,8 @@ def get_user(user: str, check_first_pw: bool = False, who: AuthenticatedUser = D
         user_dict['FirstPasswordSet'] = first_pw_set
         return user_dict
     else:
-        return user_details
+    '''
+    return user_details
 
 @router.post("/{user}", name="Update user's data")
 def post_user_data(user: str, user_details: User, who: AuthenticatedUser = Depends(UserChecker("GST"))):

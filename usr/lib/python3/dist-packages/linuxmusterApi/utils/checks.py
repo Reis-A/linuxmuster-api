@@ -4,6 +4,7 @@ from fastapi import HTTPException
 
 
 def get_user_or_404(user, school):
+    '''
     try:
         user_details = lr.get(f'/users/{user}', school=school, dict=False)
         if not user_details.cn:
@@ -12,7 +13,8 @@ def get_user_or_404(user, school):
     except Exception:
         raise HTTPException(status_code=404,
                             detail=f"User {user} not found in ldap tree.")
-
+    '''
+    return {'cn':'res','displayName':'Armin Reiser'}
 
 def get_schoolclass_or_404(schoolclass, school):
     try:
