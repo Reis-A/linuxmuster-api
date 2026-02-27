@@ -11,7 +11,7 @@ from edirectoryTools.ldapconnector import  *
 
 BASIC_AUTH = HTTPBasic()
 
-def generate_jwt(user, role, school):
+def generate_jwt(user, role, dn, school):
     """
     Generate a valid jwt for a specific user.
 
@@ -47,6 +47,8 @@ class BasicAuthChecker:
 
 
     def __call__(self, credentials: Annotated[HTTPBasicCredentials, Depends(BASIC_AUTH)]) -> str:
+        user = lr.get(f'/users/{credentials.username}')
+
         try:
             user = lr.get(f'/users/{credentials.username}')
         except Exception as e:
@@ -54,10 +56,9 @@ class BasicAuthChecker:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Malformated username, please send a valid username and password.'
             )
-        print(user)
        # if user.test_password(password=credentials.password):
         #     return generate_jwt(user.cn, user.sophomorixRole, user.dn, user.sophomorixSchoolname)
-        return generate_jwt(user.cn, user.sophomorixRole, user.sophomorixSchoolname)
+        return generate_jwt(user.cn, user.sophomorixRole, user.dn,user.sophomorixSchoolname)
 
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

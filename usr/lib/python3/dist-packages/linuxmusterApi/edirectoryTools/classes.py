@@ -1,5 +1,5 @@
 from ldap3 import Server, Connection, ALL, NTLM, SUBTREE
-
+import json
 
 def extract_schoolname(dn: str) -> str | None:
     dn_lower = dn.lower()
@@ -27,27 +27,30 @@ def extract_schoolname(dn: str) -> str | None:
     return None
 
 def extract_role_ou(dn: str) -> str | None:
-    dn_lower = dn.lower()
-    key = "ou=benutzer"
+    # Split DN into parts
+    parts = [p.strip() for p in dn.split(",")]
 
-    # Find "ou=benutzer"
-    idx = dn_lower.find(key)
-    if idx == -1:
+    # Normalize to lowercase for comparison
+    parts_lower = [p.lower() for p in parts]
+
+    # Find index of ou=benutzer
+    try:
+        idx = parts_lower.index("ou=benutzer")
+    except ValueError:
         return None
 
-    # Look left of it to find the previous comma
-    before = dn.rfind(",", 0, idx)
-    if before == -1:
-        return None
+    # The role OU is the part directly before ou=benutzer
+    if idx == 0:
+        return None  # nothing before it
 
-    # Extract the segment between the comma and "ou=benutzer"
-    segment = dn[before+1:idx].strip()
+    role_part = parts[idx - 1]  # original casing preserved
 
-    # segment is now "ou=Lehrer" or "ou=Schueler" etc.
-    if segment.lower().startswith("ou="):
-        return segment[3:]  # remove "ou="
+    # Expecting something like "ou=Lehrer"
+    if role_part.lower().startswith("ou="):
+        return role_part[3:]  # remove "ou="
+
     return None
-  
+
 
 def map_role_to_sophomorix(role_ou: str | None, dn: str) -> str | None:
     dn_lower = dn.lower()
@@ -71,6 +74,10 @@ def map_role_to_sophomorix(role_ou: str | None, dn: str) -> str | None:
         return "examuser"
     return "unknown"
 
+class LMNLDAPUser:
+    def __init__(self, data: dict):
+        for key, value in data.items():
+            setattr(self, key, value)
 
 
 class EDirectoryConnector:
@@ -105,16 +112,20 @@ class EDirectoryConnector:
         if not self.conn.entries:
             return None
         entry = self.conn.entries[0]
-
+        #attribute extrahieren
+        attrs = entry.entry_attributes_as_dict
+        # Werte vereinfachen (Listen → einzelne Werte)
+        data = {k: v[0] if isinstance(v, list) else v for k, v in attrs.items()}
         # Convert to dict
-        data = json.loads(entry.entry_to_json())
+#        data = json.loads(entry.entry_to_json())
 
         # Add DN manually
+        dn=entry.entry_dn
         data["dn"] = entry.entry_dn
         data["sophomorixSchoolname"] = extract_schoolname(dn)
         role_ou = extract_role_ou(dn) 
         data["sophomorixRole"] = map_role_to_sophomorix(role_ou, dn)
-        return data
+        return LMNLDAPUser(data)
 
 
     def get_group(self, groupname):
