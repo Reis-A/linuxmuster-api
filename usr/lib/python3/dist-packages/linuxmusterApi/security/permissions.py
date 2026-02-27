@@ -2,7 +2,8 @@ from fastapi import Depends, Request, HTTPException
 from starlette import status
 
 from .header import *
-from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+#from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+from edirectoryTools.ldapconnector import *
 
 
 class BasicChecker:

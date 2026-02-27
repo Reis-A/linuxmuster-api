@@ -75,13 +75,27 @@ def map_role_to_sophomorix(role_ou: str | None, dn: str) -> str | None:
     return "unknown"
 
 class LMNLDAPUser:
-    def __init__(self, data: dict):
+    def __init__(self, data: dict,edirectoryConnector):
+        self.data=data
+        self.connector=edirectoryConnector
         for key, value in data.items():
             setattr(self, key, value)
+
+    def test_password(self, password: str) -> bool: 
+        # eDirectory requires LDAPS for password bind 
+       # server = Server(self.config["server"], use_ssl=True) 
+        
+        
+        conn = Connection(self.connector.server, user=self.data["dn"], password=password, auto_bind=False)  
+        try: 
+            return conn.bind()
+        except ldap3.core.exceptions.LDAPBindError: 
+            return False
 
 
 class EDirectoryConnector:
     def __init__(self, config):
+        self.config=config
         self.server = Server(
             config["server"],
             get_info=ALL,
@@ -101,6 +115,10 @@ class EDirectoryConnector:
             password=self.bind_password,
             auto_bind=True
         )
+
+
+
+
     def get_user(self, username):
         search_filter = self.user_filter.format(username=username)
         self.conn.search(
@@ -125,7 +143,11 @@ class EDirectoryConnector:
         data["sophomorixSchoolname"] = extract_schoolname(dn)
         role_ou = extract_role_ou(dn) 
         data["sophomorixRole"] = map_role_to_sophomorix(role_ou, dn)
-        return LMNLDAPUser(data)
+        return LMNLDAPUser(data, self)
+
+    
+
+
 
 
     def get_group(self, groupname):
@@ -158,13 +180,13 @@ class EDirectoryConnector:
         )
         return [e.entry_to_json() for e in self.conn.entries]
 
-    def get(self, path):
+    def get(self, path, dict=False):
       parts = path.strip("/").split("/")
       if len(parts) != 2:
         raise ValueError(f"Invalid LDAP path: {path}")
       
       category, name = parts
-      print(name)
+      #print(name)
       if category == "users":
           return self.get_user(name)
 

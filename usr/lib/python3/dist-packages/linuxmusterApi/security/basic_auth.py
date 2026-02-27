@@ -6,8 +6,8 @@ import base64
 import yaml
 from typing_extensions import Annotated
 
-from linuxmusterTools.ldapconnector import LMNLdapReader as lr
-
+#from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+from edirectoryTools.ldapconnector import *
 
 BASIC_AUTH = HTTPBasic()
 
@@ -46,6 +46,8 @@ class BasicAuthChecker:
 
 
     def __call__(self, credentials: Annotated[HTTPBasicCredentials, Depends(BASIC_AUTH)]) -> str:
+        user = lr.get(f'/users/{credentials.username}', dict=False)
+
         try:
             user = lr.get(f'/users/{credentials.username}', dict=False)
         except Exception as e:
@@ -55,8 +57,9 @@ class BasicAuthChecker:
             )
 
         if user.test_password(password=credentials.password):
+            print("auth passed")
             return generate_jwt(user.cn, user.sophomorixRole, user.dn, user.sophomorixSchoolname)
-
+        print("auth failed")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Wrong credentials, please send a valid username and password.'
