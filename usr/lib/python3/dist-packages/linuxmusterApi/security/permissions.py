@@ -2,7 +2,7 @@ from fastapi import Depends, Request, HTTPException
 from starlette import status
 
 from .header import *
-#from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+from linuxmusterTools.ldapconnector import LMNLdapReader as lr
 
 
 class BasicChecker:
@@ -10,6 +10,7 @@ class BasicChecker:
     Root class which defines all common functions and variables for the other checker.
     This class can not be used directly, its only purpose is code factoring.
     """
+
 
     ROLES_MAPPING = {
         'G': 'globaladministrator',
@@ -89,6 +90,7 @@ class RoleChecker(BasicChecker):
     access its own informations.
     """
 
+
     def __init__(self, roles) -> None:
         BasicChecker.__init__(self, roles)
 
@@ -102,7 +104,7 @@ class RoleChecker(BasicChecker):
 
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Permissions denied')
+            detail='Permission denied')
 
 
 class UserChecker(BasicChecker):
@@ -110,6 +112,7 @@ class UserChecker(BasicChecker):
     Check role and user for permission access.
     globaladmin can access all user informations, and an user is able to access its own informations.
     """
+
 
     def __init__(self, roles) -> None:
         BasicChecker.__init__(self, roles)
@@ -127,7 +130,7 @@ class UserChecker(BasicChecker):
 
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Permissions denied')
+            detail='Permission denied')
 
 
 class UserListChecker(BasicChecker):
@@ -136,6 +139,7 @@ class UserListChecker(BasicChecker):
     globaladmin can access all user informations, and an user is able to access its own informations, and to access
     informations of users from a bellow roles.
     """
+
 
     def __init__(self, roles) -> None:
         BasicChecker.__init__(self, roles)
@@ -154,13 +158,13 @@ class UserListChecker(BasicChecker):
                 if not self._check_role_permissions(who, user):
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail=f'Permissions denied to request user {user}'
+                        detail=f'Permission denied to request user {user}'
                     )
             return who
 
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Permissions denied')
+            detail='Permission denied')
 
 def check_print_permissions(who, users):
     """

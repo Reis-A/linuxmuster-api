@@ -5,8 +5,8 @@ import jwt
 import base64
 import yaml
 from typing_extensions import Annotated
-from edirectoryTools.ldapconnector import  *
-#from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+
+from linuxmusterTools.ldapconnector import LMNLdapReader as lr
 
 
 BASIC_AUTH = HTTPBasic()
@@ -15,8 +15,6 @@ def generate_jwt(user, role, dn, school):
     """
     Generate a valid jwt for a specific user.
 
-    :param user: concerned user
-    :type user: basestring
     :return: jwt
     :rtype: basestring
     """
@@ -33,6 +31,7 @@ def generate_jwt(user, role, dn, school):
         'dn': dn,
         'school': school
     }
+
     token = jwt.encode(payload, secret, algorithm="HS512")
 
     # No memory leak
@@ -47,18 +46,16 @@ class BasicAuthChecker:
 
 
     def __call__(self, credentials: Annotated[HTTPBasicCredentials, Depends(BASIC_AUTH)]) -> str:
-        user = lr.get(f'/users/{credentials.username}')
-
         try:
-            user = lr.get(f'/users/{credentials.username}')
+            user = lr.get(f'/users/{credentials.username}', dict=False)
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Malformated username, please send a valid username and password.'
             )
-       # if user.test_password(password=credentials.password):
-        #     return generate_jwt(user.cn, user.sophomorixRole, user.dn, user.sophomorixSchoolname)
-        return generate_jwt(user.cn, user.sophomorixRole, user.dn,user.sophomorixSchoolname)
+
+        if user.test_password(password=credentials.password):
+            return generate_jwt(user.cn, user.sophomorixRole, user.dn, user.sophomorixSchoolname)
 
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
