@@ -30,9 +30,9 @@ def generate_jwt(user, role, school):
     payload  = {
         'user': user,
         'role': role,
+        'dn': dn,
         'school': school
     }
-    print(payload)
     token = jwt.encode(payload, secret, algorithm="HS512")
 
     # No memory leak
@@ -47,20 +47,17 @@ class BasicAuthChecker:
 
 
     def __call__(self, credentials: Annotated[HTTPBasicCredentials, Depends(BASIC_AUTH)]) -> str:
-        user = lr.get(f'/users/{credentials.username}')
-        print(user.cn)
         try:
-            print(f'/users/{credentials.username}')
             user = lr.get(f'/users/{credentials.username}')
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Malformated username, please send a valid username and password.'
             )
-
-        if user.test_password(password=credentials.password):
-             return generate_jwt(user.cn, user.sophomorixRole, user.sophomorixSchoolname)
-       # return generate_jwt(user.cn, user.sophomorixRole, user.sophomorixSchoolname)
+        print(user)
+       # if user.test_password(password=credentials.password):
+        #     return generate_jwt(user.cn, user.sophomorixRole, user.dn, user.sophomorixSchoolname)
+        return generate_jwt(user.cn, user.sophomorixRole, user.sophomorixSchoolname)
 
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
