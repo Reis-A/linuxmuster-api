@@ -140,6 +140,7 @@ class EDirectoryConnector:
         # Add DN manually
         dn=entry.entry_dn
         data["dn"] = entry.entry_dn
+        data["distinguishedName"] = dn
         data["sophomorixSchoolname"] = extract_schoolname(dn)
         role_ou = extract_role_ou(dn) 
         data["sophomorixRole"] = map_role_to_sophomorix(role_ou, dn)
@@ -180,6 +181,26 @@ class EDirectoryConnector:
         )
         return [e.entry_to_json() for e in self.conn.entries]
 
+
+
+    def getvalues_user(self, username, attrs):
+       # Load the user via your existing LDAP lookup
+      user_obj = self.get_user(username)
+      if user_obj is None:
+        raise ValueError(f"User '{username}' not found")
+
+      # user_obj.data contains all attributes from LDAP + sophomorix extras
+      #Attribute muessen im userobject gepflegt und implementiert werden in der getuser Funktion
+      data = user_obj.data
+
+      result = {}
+      for attr in attrs:
+          value = data.get(attr)
+
+      return result
+
+
+
     def get(self, path, dict=False):
       parts = path.strip("/").split("/")
       if len(parts) != 2:
@@ -194,4 +215,21 @@ class EDirectoryConnector:
           return self.get_group(name)
 
       raise ValueError(f"Unknown LDAP category: {category}")
+
+    def getvalues(self, path, attrs):
+      parts = path.strip("/").split("/")
+      if len(parts) != 2:
+        raise ValueError(f"Invalid LDAP path: {path}")
+
+      category, name = parts
+
+      if category == "users":
+        return self.getvalues_user(name, attrs)
+
+      raise ValueError(f"Unknown LDAP category: {category}")
+
+
+    def getval(self, path, attr):
+      result = self.getvalues(path, [attr])
+      return result[attr]
 

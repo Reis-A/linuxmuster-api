@@ -57,10 +57,9 @@ class BasicAuthChecker:
             )
 
         if user.test_password(password=credentials.password):
-            print("auth passed")
             return generate_jwt(user.cn, user.sophomorixRole, user.dn, user.sophomorixSchoolname)
-        print("auth failed")
-        raise HTTPException(
+       
+       raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Wrong credentials, please send a valid username and password.'
         )
