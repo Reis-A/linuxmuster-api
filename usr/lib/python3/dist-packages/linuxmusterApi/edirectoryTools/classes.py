@@ -192,7 +192,7 @@ class EDirectoryConnector:
       # user_obj.data contains all attributes from LDAP + sophomorix extras
       #Attribute muessen im userobject gepflegt und implementiert werden in der getuser Funktion
       data = user_obj.data
-      print(attrs)
+     # print(attrs)
       result = {}
       for attr in attrs:
           result[attr] = data.get(attr)
@@ -231,6 +231,6 @@ class EDirectoryConnector:
 
     def getval(self, path, attr):
       result = self.getvalues(path, [attr])
-      print(result[attr])
+    #  print(result[attr])
       return result[attr]
 

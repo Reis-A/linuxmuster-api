@@ -6,6 +6,8 @@ from edirectoryTools.ldapconnector import *
 
 
 def get_user_or_404(user, school):
+   # user_details = lr.get(f'/users/{user}', school=school, dict=False)
+
     try:
         user_details = lr.get(f'/users/{user}', school=school, dict=False)
     except Exception as err:
