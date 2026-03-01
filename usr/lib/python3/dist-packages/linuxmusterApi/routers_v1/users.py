@@ -6,6 +6,7 @@ from .body_schemas import SetFirstPassword, SetCurrentPassword, UserList, User
 #from linuxmusterTools.ldapconnector import LMNUser, LMNStudent
 #from linuxmusterTools.samba_util import UserManager
 #import linuxmusterTools.quotas
+from edirectoryTools.ldapconnector import *
 from utils.checks import get_user_or_404
 
 
@@ -58,10 +59,11 @@ def get_user(user: str, check_first_pw: bool = False, who: AuthenticatedUser = D
     :return: All user's details
     :rtype: dict
     """
-
+    print(user)
+    print(who)
 
     user_details = get_user_or_404(user, who.school)
-    '''
+
     if check_first_pw:
         user_details = lr.get(f'/users/{user}', dict=False, school=who.school)
         first_pw_set = user_details.test_first_password()
@@ -69,8 +71,7 @@ def get_user(user: str, check_first_pw: bool = False, who: AuthenticatedUser = D
         user_dict['FirstPasswordSet'] = first_pw_set
         return user_dict
     else:
-    '''
-    return user_details
+        return user_details
 
 @router.post("/{user}", name="Update user's data")
 def post_user_data(user: str, user_details: User, who: AuthenticatedUser = Depends(UserChecker("GST"))):

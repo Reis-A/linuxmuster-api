@@ -7,7 +7,7 @@ import yaml
 from pydantic import BaseModel
 
 #from linuxmusterTools.ldapconnector import LMNLdapReader as lr
-from edirectoryTools.ldapconnector import *
+from linuxmusterTools.ldapconnector import *
 
 
 class AuthenticatedUser(BaseModel):
