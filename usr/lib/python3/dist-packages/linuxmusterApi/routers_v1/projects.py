@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from security import RoleChecker, UserListChecker, AuthenticatedUser
 from .body_schemas import Project
-#from linuxmusterTools.ldapconnector import LMNLdapReader as lr, LMNProject
-#from linuxmusterTools.common import Validator, NAME_RULES
+from linuxmusterTools.ldapconnector import LMNLdapReader as lr, LMNProject
+from linuxmusterTools.common import Validator, NAME_RULES
 from utils.sophomorix import lmn_getSophomorixValue
 from utils.checks import get_project_or_404
 
@@ -45,12 +45,31 @@ def get_projects_list(who: AuthenticatedUser = Depends(RoleChecker("GST"))):
     elif who.role == "teacher":
         # Only the teacher's project or not hidden projects or project in which the teacher is member of
         # TODO: read sophomorixMemberGroups and sophomorixAdminGroups too
+
         response =  []
+        user_details = {}
+
         for project in projects:
             if who.user in project['sophomorixAdmins'] or who.user in project['sophomorixMembers']:
                 response.append(project)
             elif not project['sophomorixHidden']:
                 response.append(project)
+            else:
+                # Digging deeper
+                project_groups = project['sophomorixAdminGroups'] + project['sophomorixMemberGroups']
+
+                if not user_details:
+                    # Details not already cached
+                    user_details = lr.get(f'/users/{who.user}', school=who.school, dict=False)
+
+                # User is in a schoolclass member or admin of this project
+                if user_details.sophomorixAdminClass in project_groups:
+                    response.append(project)
+
+                # User is in a project member or admin of this project
+                for p in user_details.projects:
+                    if p in project_groups:
+                        response.append(project)
         return response
 
 @router.get("/{project}", name="Get all details from a specific project")
@@ -78,7 +97,7 @@ def get_project_details(project: str, all_members: bool = False, who: Authentica
     """
 
 
-    project_details = get_project_or_404(project, who.school)
+    project_details = get_project_or_404(project, who, dict=False)
     
     if all_members:
         project_details.get_all_members()
@@ -89,18 +108,7 @@ def get_project_details(project: str, all_members: bool = False, who: Authentica
         project_details['members'] = [lr.get(f'/users/{member}') for member in project_details['all_members']]
         project_details['admins'] = [lr.get(f'/users/{member}') for member in project_details['all_admins']]
 
-    if who.role in ["schooladministrator", "globaladministrator"]:
-        # No filter
-        return project_details
-
-    elif who.role == "teacher":
-        # Only the teacher's project or not hidden projects or project in which the teacher is member of
-        # TODO: read sophomorixMemberGroups and sophomorixAdminGroups too
-        if who.user in project_details['sophomorixAdmins'] or who.user in project_details['sophomorixMembers']:
-            return project_details
-        elif not project_details['sophomorixHidden']:
-            return project_details
-        raise HTTPException(status_code=403, detail=f"Forbidden")
+    return project_details
 
 @router.delete("/{project}", status_code=204, name="Delete a specific project")
 def delete_project(project: str, who: AuthenticatedUser = Depends(RoleChecker("GST"))):
@@ -129,13 +137,13 @@ def delete_project(project: str, who: AuthenticatedUser = Depends(RoleChecker("G
 
     # Ensure prefix is given
     prefix = "p_"
-    if who.school != "default-school":
+    if who.school not in ["default-school","global"]:
         prefix = f"p_{who.school}-"
 
     if not project.startswith(prefix):
         project = prefix + project
 
-    project_details = get_project_or_404(project, who.school)
+    project_details = get_project_or_404(project, who, dict=False)
 
     projectname = project.replace(prefix, "")
 
@@ -203,7 +211,7 @@ def create_project(project: str, project_details: Project, who: AuthenticatedUse
 
     prefix = "p_"
     if project_details.school:
-        if project_details.school != "default-school":
+        if project_details.school not in ["default-school","global"]:
             options.extend(['--school', project_details.school])
             prefix = f"p_{project_details.school}-"
 
@@ -319,13 +327,13 @@ def modify_project(project: str, project_details: Project, who: AuthenticatedUse
 
     prefix = "p_"
     if project_details.school:
-        if project_details.school != "default-school":
+        if project_details.school not in ["default-school","global"]:
             prefix = f"p_{project_details.school}-"
 
     if not project.startswith(prefix):
         project = prefix + project
 
-    project_exists = get_project_or_404(project, who.school)
+    project_exists = get_project_or_404(project, who, dict=False)
 
     if who.role == "teacher":
         # Only teacher admins of the group should be able to modify the project
@@ -417,12 +425,12 @@ def join_project(project: str, who: AuthenticatedUser = Depends(RoleChecker("GST
     """
 
 
-    project_details = get_project_or_404(project, who.school)
+    project_details = get_project_or_404(project, who, dict=False)
 
     if who.role == "teacher":
-        # Teacher can only join a project if the project is joinable and visible
+        # Teacher can only join a project if the project is joinable
         if project_details.sophomorixJoinable == False:
-            raise HTTPException(status_code=403, detail=f"Forbidden")
+            raise HTTPException(status_code=403, detail=f"Project {project} is not joinable.")
 
     # project can be given with or without prefix here
     cmd = ['sophomorix-project',  '--addmembers', who.user, '-p', project.lower(), '-jj']
@@ -456,7 +464,12 @@ def quit_project(project: str, who: AuthenticatedUser = Depends(RoleChecker("GST
     """
 
 
-    get_project_or_404(project, who.school)
+    project_details = get_project_or_404(project, who, dict=False)
+
+    if who.role == "teacher":
+        # Teacher can only join a project if the project is joinable
+        if project_details.sophomorixJoinable == False:
+            raise HTTPException(status_code=403, detail=f"Project {project} is not joinable, and cannot be quitted.")
 
     # project can be given with or without prefix here
     cmd = ['sophomorix-project',  '--removemembers', who.user, '--removeadmins', who.user, '-p', project.lower(), '-jj']

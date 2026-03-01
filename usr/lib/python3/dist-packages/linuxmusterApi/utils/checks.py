@@ -4,9 +4,8 @@ from fastapi import HTTPException
 #from linuxmusterTools.ldapconnector import LMNLdapReader as lr
 from edirectoryTools.ldapconnector import *
 
-def get_user_or_404(user, school):
-    user_details = lr.get(f'/users/{user}', school=school, dict=False)
 
+def get_user_or_404(user, school):
     try:
         user_details = lr.get(f'/users/{user}', school=school, dict=False)
     except Exception as err:

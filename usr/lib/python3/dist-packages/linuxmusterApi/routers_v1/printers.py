@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from security import RoleChecker, AuthenticatedUser
-#from linuxmusterTools.ldapconnector import LMNLdapReader as lr, LMNPrinter
+from linuxmusterTools.ldapconnector import LMNLdapReader as lr, LMNPrinter
 from utils.checks import get_printer_or_404
 from utils.sophomorix import lmn_getSophomorixValue
 from .body_schemas import Printer
@@ -16,9 +16,9 @@ router = APIRouter(
 @router.get("/", name="List all printers")
 def get_all_printers(who: AuthenticatedUser = Depends(RoleChecker("GST"))):
     """
-    ## List all printers with all available informations.
+    ## List all printers with all available information.
 
-    Output informations are e.g. cn, dn, members, etc...
+    Output information are e.g. cn, dn, members, etc...
 
     ### Access
     - global-administrators
@@ -33,15 +33,23 @@ def get_all_printers(who: AuthenticatedUser = Depends(RoleChecker("GST"))):
     """
 
 
-    return lr.get('/printers', school=who.school)
+    if who.role in ["schooladministrator", "globaladministrator"]:
+        return lr.get('/printers', school=who.school)
+    else:
+        printers = []
+        for printer in lr.get('/printers', school=who.school):
+            if not printer['sophomorixHidden'] or who.dn in printer['member']:
+                printers.append(printer)
+
+        return printers
 
 @router.get("/{printer}", name="Get details of a specific printer")
 def get_printer(printer: str, all_members: bool = False, who: AuthenticatedUser = Depends(RoleChecker("GST"))):
     """
-    ## List all available informations of a specific printer.
+    ## List all available information of a specific printer.
 
-    Output informations are e.g. cn, dn, members, etc...
-    The optional query parameter `all_members` is a boolean. If set to true, this endpoint will search recusiverly for
+    Output information are e.g. cn, dn, members, etc...
+    The optional query parameter `all_members` is a boolean. If set to true, this endpoint will search recursively for
     all members in all nested groups (may take a while).
 
     ### Access
@@ -75,11 +83,16 @@ def get_printer(printer: str, all_members: bool = False, who: AuthenticatedUser 
         return printer_details
 
     elif who.role == "teacher":
-        # TODO: read sophomorixMemberGroups too
         if who.user in printer_details['sophomorixMembers']:
             return printer_details
         elif not printer_details['sophomorixHidden']:
             return printer_details
+        else:
+            # Maybe the user is member of a group contained in the member attribute of the printer
+            memberof = lr.getval(f'/users/{who.user}', 'memberOf')
+            for dn in printer_details['member']:
+                if dn in memberof:
+                    return printer_details
         raise HTTPException(status_code=403, detail=f"Forbidden")
 
 @router.patch("/{printer}", status_code=204, name="Patch printer")
@@ -180,7 +193,24 @@ def join_printer(printer: str, who: AuthenticatedUser = Depends(RoleChecker("T")
     :type who: AuthenticatedUser
     """
 
-    get_printer_or_404(printer, who.school)
+
+    printer_data = get_printer_or_404(printer, who.school)
+
+    member = False
+    if who.dn in printer_data.member:
+        member = True
+    else:
+        # Maybe the user is member of a group contained in the member attribute of the printer
+        memberof = lr.getval(f'/users/{who.user}', 'memberOf')
+        for dn in printer_data.member:
+            if dn in memberof:
+                member = True
+
+    if member:
+        return f"Already member of the group of {printer}"
+
+    if not printer_data.sophomorixJoinable:
+        raise HTTPException(status_code=403, detail=f"Printer {printer} is not joinable.")
 
     cmd = ['sophomorix-group',  '--addmembers', who.user, '--group', printer.lower(), '-jj']
     result =  lmn_getSophomorixValue(cmd, '')
@@ -211,7 +241,24 @@ def quit_printer(printer: str, who: AuthenticatedUser = Depends(RoleChecker("T")
     :type who: AuthenticatedUser
     """
 
-    get_printer_or_404(printer, who.school)
+
+    printer_data = get_printer_or_404(printer, who.school)
+
+    member = False
+    if who.dn in printer_data.member:
+        member = True
+    else:
+        # Maybe the user is member of a group contained in the member attribute of the printer
+        memberof = lr.getval(f'/users/{who.user}', 'memberOf')
+        for dn in printer_data.member:
+            if dn in memberof:
+                member = True
+
+    if not member:
+        return f"Already not a member of the group of {printer}"
+
+    if not printer_data.sophomorixJoinable:
+        raise HTTPException(status_code=403, detail=f"Printer {printer} is not joinable and cannot be quitted.")
 
     cmd = ['sophomorix-group',  '--removemembers', who.user, '--group', printer.lower(), '-jj']
     result =  lmn_getSophomorixValue(cmd, '')

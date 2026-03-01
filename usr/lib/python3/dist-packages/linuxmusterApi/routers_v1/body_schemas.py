@@ -59,6 +59,20 @@ class Project(BaseModel):
     quota: list[LMNShareQuota] | None = []
     school: str = 'default-school'
 
+class SchoolclassAttr(BaseModel):
+    """
+    Model to patch some attributes of a specific schoolclass.
+    """
+
+
+    description: str | None = ''
+    displayName: str | None = ''
+    join: bool = True
+    hide: bool = False
+    mailalias: bool = False
+    maillist: bool = False
+    mailquota: int | None = None
+
 class User(BaseModel):
     """
     Model to patch user's data.
@@ -158,3 +172,12 @@ class PrintPasswordsUsersParameter(BaseModel):
     pdflatex: bool | None = False
     school: str | None = ''
     users: list
+
+class MgmtList(BaseModel):
+    """
+    Content of a management file list like /etc/linuxmuster/sophomorix/default-school/teachers.csv
+    data should be a list of dict, with one dict per line.
+    """
+
+
+    data: list | None = None

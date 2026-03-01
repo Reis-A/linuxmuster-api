@@ -4,8 +4,8 @@ from datetime import datetime
 from security import UserChecker, UserListChecker, AuthenticatedUser
 from utils.checks import get_user_or_404
 from .body_schemas import UserList
-#from linuxmusterTools.ldapconnector import LMNUser, LMNLdapReader as lr
-#from linuxmusterTools.common import Validator, NAME_RULES
+from linuxmusterTools.ldapconnector import LMNUser, LMNLdapReader as lr
+from linuxmusterTools.common import Validator, NAME_RULES
 
 
 router = APIRouter(

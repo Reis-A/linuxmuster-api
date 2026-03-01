@@ -26,5 +26,6 @@ def get_lmn_version(who: AuthenticatedUser = Depends(RoleChecker("GS"))):
     :rtype: dict
     """
 
+
     packages = subprocess.check_output("dpkg -l | grep 'linuxmuster-\\|sophomorix' | awk 'BEGIN {OFS=\"=\";} {print $2,$3}'", shell=True).decode().split()
     return dict([package.split('=') for package in packages])

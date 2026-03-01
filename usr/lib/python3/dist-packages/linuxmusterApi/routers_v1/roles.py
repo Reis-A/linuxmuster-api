@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from security import RoleChecker, AuthenticatedUser
-#from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+from linuxmusterTools.ldapconnector import LMNLdapReader as lr
 
 
 router = APIRouter(
@@ -13,7 +13,7 @@ router = APIRouter(
 @router.get("/", name="List all existing roles")
 def get_all_roles(who: AuthenticatedUser = Depends(RoleChecker("GS"))):
     """
-    ## List all existing roles
+    ## List all existing roles including users and computers
 
     ### Access
     - global-administrators
@@ -30,7 +30,7 @@ def get_all_roles(who: AuthenticatedUser = Depends(RoleChecker("GS"))):
     return set([k['sophomorixRole'] for k in lr.get('/search/', attributes=['sophomorixRole']) if k['sophomorixRole']])
 
 @router.get("/{role}", name="List all members with a specific role")
-def get_role_users(role: str, school: str | None = 'default-school', who: AuthenticatedUser = Depends(RoleChecker(["GS"]))):
+def get_role_users(role: str, check_parents: bool = False, school: str | None = 'default-school', who: AuthenticatedUser = Depends(RoleChecker("GS"))):
     """
     ## List all users (and all their details) having a specific role
 
@@ -52,8 +52,13 @@ def get_role_users(role: str, school: str | None = 'default-school', who: Authen
     """
 
 
-    if 'global' in role:
-        return lr.get(f'/roles/{role}')
+    if check_parents:
+        endpoint = 'roles'
+    else:
+        endpoint = 'rawroles'
 
-    return lr.get(f'/roles/{role}', school=school)
+    if 'global' in role:
+        return lr.get(f'/{endpoint}/{role}')
+
+    return lr.get(f'/{endpoint}/{role}', school=school)
 
