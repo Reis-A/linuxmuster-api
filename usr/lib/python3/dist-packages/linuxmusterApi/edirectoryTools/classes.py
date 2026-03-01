@@ -74,12 +74,52 @@ def map_role_to_sophomorix(role_ou: str | None, dn: str) -> str | None:
         return "examuser"
     return "unknown"
 
+
+from pydantic import BaseModel
+
+class UserOut(BaseModel):
+    uid: str
+    cn: str
+    dn: str
+    sn: str | None = None
+    givenName: str | None = None
+    mail: str | None = None
+    sophomorixRole: str
+    sophomorixSchoolname: str
+
+
+
 class LMNLDAPUser:
     def __init__(self, data: dict,edirectoryConnector):
         self.data=data
         self.connector=edirectoryConnector
         for key, value in data.items():
             setattr(self, key, value)
+    
+    def asdict(self):
+      result = {}
+      for key, value in self.__dict__.items():
+          if key in ("edirectory Connector", "data"):
+              continue # normalize ldap3 lists
+          if isinstance(value, list) and len(value) == 1: 
+              result[key] = value[0]
+          else:
+              result[key] = value
+      return result
+
+
+     # return self.data
+ 
+    def __iter__(self):
+      yield from self.data.items()
+
+    def __getitem__(self, item):
+      return self.data[item]
+
+    def __json__(self):
+      return self.data
+
+
 
     def test_password(self, password: str) -> bool: 
         # eDirectory requires LDAPS for password bind 
@@ -91,7 +131,8 @@ class LMNLDAPUser:
             return conn.bind()
         except ldap3.core.exceptions.LDAPBindError: 
             return False
-
+    def to_pydantic(self): 
+        return UserOut(**self.data)
 
 class EDirectoryConnector:
     def __init__(self, config):
@@ -125,7 +166,7 @@ class EDirectoryConnector:
             search_base=self.user_base,
             search_filter=search_filter,
             search_scope=SUBTREE,
-            attributes=["uid", "cn", "sn", "givenName", "mail"]
+            attributes=["uid", "cn", "sn", "givenName", "mail","fullname"]
         )
         if not self.conn.entries:
             return None
@@ -133,17 +174,28 @@ class EDirectoryConnector:
         #attribute extrahieren
         attrs = entry.entry_attributes_as_dict
         # Werte vereinfachen (Listen → einzelne Werte)
-        data = {k: v[0] if isinstance(v, list) else v for k, v in attrs.items()}
-        # Convert to dict
+        data={}
+       # data = {k: v[0] if isinstance(v, list) else v for k, v in attrs.items()}
+       # print(data)
+       # Convert to dict
 #        data = json.loads(entry.entry_to_json())
 
         # Add DN manually
         dn=entry.entry_dn
-        data["dn"] = entry.entry_dn
+        school=extract_schoolname(dn)
+        cn=entry.cn.value
+        data["cn"]=cn
+        data["name"]=cn
+        data["sAMAccountName"]=cn
+        data["mail"]=[entry.mail.value]
+        data["displayName"]=entry.fullname.value
+        data["dn"] = dn
         data["distinguishedName"] = dn
-        data["sophomorixSchoolname"] = extract_schoolname(dn)
+        data["sophomorixSchoolname"] = school
+        data["school"]= school
         role_ou = extract_role_ou(dn) 
         data["sophomorixRole"] = map_role_to_sophomorix(role_ou, dn)
+        print(data)
         return LMNLDAPUser(data, self)
 
     
@@ -201,7 +253,7 @@ class EDirectoryConnector:
 
 
 
-    def get(self, path, dict=False):
+    def get(self, path, school: str | None = None, dict: bool = False):
       parts = path.strip("/").split("/")
       if len(parts) != 2:
         raise ValueError(f"Invalid LDAP path: {path}")

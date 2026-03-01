@@ -103,8 +103,8 @@ def post_user_data(user: str, user_details: User, who: AuthenticatedUser = Depen
         if (key == "thumbnailPhoto" and value is not None) or value:
             data[key] = value
 
-    UserWriter = LMNUser(user.lower(), who.school)
-    UserWriter.setattr(data=data)
+  #  UserWriter = LMNUser(user.lower(), who.school)
+  #  UserWriter.setattr(data=data)
 
 
 @router.post("/get_users_from_cn", name="User details")
