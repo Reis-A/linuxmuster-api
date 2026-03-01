@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from security import RoleChecker, UserListChecker, AuthenticatedUser
 from utils.sophomorix import lmn_getSophomorixValue
-from linuxmusterTools.samba_util.smbstatus import SMBConnections
+#from linuxmusterTools.samba_util.smbstatus import SMBConnections
 
 
 router = APIRouter(

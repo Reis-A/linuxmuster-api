@@ -10,7 +10,7 @@ from edirectoryTools.ldapconnector import *
 from utils.checks import get_user_or_404
 
 
-user_manager = UserManager()
+#user_manager = UserManager()
 
 router = APIRouter(
     prefix="/users",

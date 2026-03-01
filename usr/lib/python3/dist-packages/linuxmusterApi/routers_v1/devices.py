@@ -3,8 +3,8 @@ import subprocess
 from fastapi import APIRouter, Depends, HTTPException
 
 from security import RoleChecker, AuthenticatedUser
-from linuxmusterTools.ldapconnector import LMNLdapReader as lr
-from linuxmusterTools.lmnfile import LMNFile
+#from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+#from linuxmusterTools.lmnfile import LMNFile
 from utils.checks import get_printer_or_404
 from utils.sophomorix import lmn_getSophomorixValue
 from .body_schemas import MgmtList

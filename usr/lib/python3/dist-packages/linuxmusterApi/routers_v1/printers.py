@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from security import RoleChecker, AuthenticatedUser
-from linuxmusterTools.ldapconnector import LMNLdapReader as lr, LMNPrinter
+#from linuxmusterTools.ldapconnector import LMNLdapReader as lr, LMNPrinter
 from utils.checks import get_printer_or_404
 from utils.sophomorix import lmn_getSophomorixValue
 from .body_schemas import Printer

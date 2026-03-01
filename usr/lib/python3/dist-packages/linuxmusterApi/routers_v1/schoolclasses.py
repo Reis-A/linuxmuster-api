@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
 
 from security import RoleChecker, AuthenticatedUser
-from linuxmusterTools.print import print_schoolclass_list
-from linuxmusterTools.ldapconnector import LMNLdapReader as lr
-from linuxmusterTools.ldapconnector import LMNSchoolclass
+#from linuxmusterTools.print import print_schoolclass_list
+#from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+#from linuxmusterTools.ldapconnector import LMNSchoolclass
 from utils.checks import get_schoolclass_or_404
 from utils.sophomorix import lmn_getSophomorixValue
 from .body_schemas import SchoolclassAttr

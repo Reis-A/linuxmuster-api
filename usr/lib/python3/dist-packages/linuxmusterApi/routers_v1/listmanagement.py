@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 
 from security import RoleChecker, AuthenticatedUser
 from utils.checks import check_valid_mgmtlist_or_404
-from linuxmusterTools.lmnfile import LMNFile
-from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+#from linuxmusterTools.lmnfile import LMNFile
+#from linuxmusterTools.ldapconnector import LMNLdapReader as lr
 from utils.sophomorix import lmn_getSophomorixValue, process_user
 from .body_schemas import MgmtList
 

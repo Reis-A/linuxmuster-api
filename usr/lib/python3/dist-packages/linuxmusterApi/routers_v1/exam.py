@@ -4,7 +4,7 @@ from time import localtime, strftime
 from security import UserListChecker, AuthenticatedUser, RoleChecker
 from .body_schemas import UserList, StopExam
 from utils.sophomorix import lmn_getSophomorixValue
-from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+#from linuxmusterTools.ldapconnector import LMNLdapReader as lr
 
 
 router = APIRouter(

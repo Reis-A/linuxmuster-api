@@ -7,7 +7,7 @@ import yaml
 from typing_extensions import Annotated
 
 #from linuxmusterTools.ldapconnector import LMNLdapReader as lr
-from linuxmusterTools.ldapconnector import *
+from edirectoryTools.ldapconnector import *
 
 
 BASIC_AUTH = HTTPBasic()
