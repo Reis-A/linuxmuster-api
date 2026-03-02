@@ -3,7 +3,7 @@ from starlette import status
 
 from .header import *
 #from linuxmusterTools.ldapconnector import LMNLdapReader as lr
-from edirectoryTools.ldapconnector import *
+from edirectoryTools.ldapconnector import lr
 
 
 class BasicChecker:

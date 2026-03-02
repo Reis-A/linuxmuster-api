@@ -1,4 +1,4 @@
-from edirectoryTools.classes import EDirectoryConnector
+from edirectoryTools.Connector import EDirectoryConnector
 import yaml
 
 with open('/etc/linuxmuster/api/config.yml', 'r') as config_file:

@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from security import RoleChecker, UserChecker, AuthenticatedUser, UserListChecker
 from .body_schemas import SetFirstPassword, SetCurrentPassword, UserList, User
 #from linuxmusterTools.ldapconnector import LMNLdapReader as lr
-from edirectoryTools.ldapconnector import *
+from edirectoryTools.ldapconnector import lr
+
 #from linuxmusterTools.ldapconnector import LMNUser, LMNStudent
 #from linuxmusterTools.samba_util import UserManager
 #import linuxmusterTools.quotas

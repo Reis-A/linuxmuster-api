@@ -32,6 +32,24 @@ app = FastAPI(
     },
 )
 
+@app.on_event("startup")
+def startup_checks():
+    # Secret prüfen
+    secret = config.get('secret', None)
+    if not secret:
+        print('Linuxmuster-api can not work without secret key, please configure it first.')
+        sys.exit(1)
+
+    try:
+        secret_decoded = base64.b64decode(secret)
+        if len(secret_decoded) < 64:
+            print('Secret key should at least be 512 bits long for an optimal security.')
+            sys.exit(1)
+    except binascii.Error as e:
+        print(f'Invalid secret key in config.yml: {e}')
+        sys.exit(1)
+
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 if config.get("cors", {}):
@@ -42,6 +60,9 @@ if config.get("cors", {}):
         allow_methods     = config["cors"].get("allow_methods", ["*"]),
         allow_headers     = config["cors"].get("allow_headers", ["*"]),
     )
+
+
+
 
 # V1
 from routers_v1 import (
@@ -124,6 +145,9 @@ def custom_openapi():
     return app.openapi_schema
 
 app.openapi = custom_openapi
+
+
+#this section is irrelevant if run as systemd service with uvicorn
 
 if __name__ == "__main__":
     secret = config.get('secret', None)

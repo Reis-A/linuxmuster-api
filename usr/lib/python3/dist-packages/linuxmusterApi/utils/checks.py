@@ -2,7 +2,7 @@ import os
 from fastapi import HTTPException
 
 #from linuxmusterTools.ldapconnector import LMNLdapReader as lr
-from edirectoryTools.ldapconnector import *
+from edirectoryTools.ldapconnector import lr
 
 
 def get_user_or_404(user, school):
