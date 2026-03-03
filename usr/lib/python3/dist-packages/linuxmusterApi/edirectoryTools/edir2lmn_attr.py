@@ -2,29 +2,24 @@ from ldap3 import Server, Connection, ALL, NTLM, SUBTREE
 import json
 
 def extract_schoolname(dn: str) -> str | None:
-    dn_lower = dn.lower()
+    parts = [p.strip() for p in dn.split(",")]
 
-    start_key = "ou=benutzer,"
-    end_key = ",ou=schulen"
-
-    start_index = dn_lower.find(start_key)
-    if start_index == -1:
+    # Normalize to lowercase for comparison
+    parts_lower = [p.lower() for p in parts]
+    # Find index of ou=benutzer
+    try:
+        idx = parts_lower.index("ou=schulen")
+    except ValueError:
         return None
-
-    start_index += len(start_key)
-
-    end_index = dn_lower.find(end_key, start_index)
-    if end_index == -1:
-        return None
-
-    # Extract from the ORIGINAL DN to preserve casing
-    segment = dn[start_index:end_index].strip()
-
-    # segment is "ou=SchoolName"
-    if segment.lower().startswith("ou="):
-        return segment[3:]  # remove "ou="
+    # The role OU is the part directly before ou=schulen
+    if idx == 0:
+        return None  # nothing before it
+    if parts_lower[idx - 1].startswith("ou="):
+      return parts_lower[idx - 1][3:]  # remove ou= return lowercase
 
     return None
+
+
 
 def extract_role_ou(dn: str) -> str | None:
     # Split DN into parts
@@ -54,7 +49,7 @@ def extract_role_ou(dn: str) -> str | None:
 
 def map_role_to_sophomorix(role_ou: str | None, dn: str) -> str | None:
     dn_lower = dn.lower()
-    if ( "cn=admin" in dn_lower and "ou=server" in dn_lower and "ou=dienste" in dn_lower ):
+    if ( "ou=global" in dn_lower and "o=ml3" in dn_lower ):
         return "globaladministrator"
 # 2. Normal school roles if role_ou is None: return None
 
@@ -64,9 +59,9 @@ def map_role_to_sophomorix(role_ou: str | None, dn: str) -> str | None:
 
     r = role_ou.lower()
 
-    if r in ("lehrer", "teacher"):
+    if r in ("lehrer"):
         return "teacher"
-    if r in ("schueler", "student"):
+    if r in ("schueler"):
         return "student"
     if r in ("verwalter", ""):
         return "schooladministrator"

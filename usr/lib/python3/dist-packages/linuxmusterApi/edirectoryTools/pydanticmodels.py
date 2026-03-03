@@ -4,15 +4,27 @@ from edirectoryTools.edir2lmn_attr import *
 
 from pydantic import BaseModel
 
-class UserOut(BaseModel):
+
+
+
+
+
+
+
+
+
+
+
+class LMNUserModel(BaseModel):
     uid: str
     cn: str
     dn: str
     sn: str | None = None
     givenName: str | None = None
-    mail: str | None = None
+    mail: list | None = None
     sophomorixRole: str
     sophomorixSchoolname: str
+    schoolclasses:  list 
 
 
 
@@ -59,7 +71,7 @@ class LMNLDAPUser:
         except ldap3.core.exceptions.LDAPBindError: 
             return False
     def to_pydantic(self): 
-        return UserOut(**self.data)
+        return LMNUserModel(**self.data)
 
 
 

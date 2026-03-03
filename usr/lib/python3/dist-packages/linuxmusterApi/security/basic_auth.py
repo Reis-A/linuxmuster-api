@@ -56,7 +56,7 @@ class BasicAuthChecker:
             )
 
         if user.test_password(password=credentials.password):
-            return generate_jwt(user.cn.lower(), user.sophomorixRole, user.dn, user.sophomorixSchoolname.lower())
+            return generate_jwt(user.cn, user.sophomorixRole, user.dn, user.sophomorixSchoolname)
 
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -34,7 +34,7 @@ class EDirectoryConnector:
         # Filters
         self.user_filter = config["user_filter"]
         self.group_filter = config["group_filter"]
-
+        self.excluded_schools = config["excluded_schools"]
         # LDAP Connection
         self.conn = Connection(
             self.server,
@@ -100,6 +100,15 @@ class EDirectoryConnector:
         )
         return [e.entry_to_json() for e in self.conn.entries]
 
+ 
+    # ---------------------------------------------------------
+    # SCHOOLS ()
+    # ---------------------------------------------------------
+    def get_schools(self):
+        return self.user_manager.get_schools()
+
+
+
 
 
     # ---------------------------------------------------------
@@ -108,17 +117,25 @@ class EDirectoryConnector:
 
     def get(self, path, school: str | None = None, dict: bool = False):
         parts = path.strip("/").split("/")
-        if len(parts) != 2:
-            raise ValueError(f"Invalid LDAP path: {path}")
+        if len(parts) ==1:
+           category= parts[0]
+           if category == "schools":
+             return  self.get_schools()
+           
 
-        category, name = parts
+        if len(parts) == 2:
 
-        if category == "users":
-            return self.get_user(name)
+           category, name = parts
 
-        if category == "groups":
-            return self.get_group(name)
+           if category == "users":
+              return self.get_user(name)
 
+           if category == "groups":
+              return self.get_group(name)
+           if category == "schools":
+              return self.get_school(name)
+
+        
         raise ValueError(f"Unknown LDAP category: {category}")
 
 

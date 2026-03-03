@@ -1,6 +1,6 @@
-from ldap3 import Server, Connection, ALL, NTLM, SUBTREE
+from ldap3 import Server, Connection, ALL, NTLM, SUBTREE, LEVEL
 from edirectoryTools.edir2lmn_attr import *
-from .usermodels import LMNLDAPUser
+from .pydanticmodels import LMNLDAPUser
 import time
 from threading import Lock
 
@@ -44,11 +44,13 @@ class UserManager:
             password=self.connector.bind_password,
             auto_bind=True
         )
+        
+        #########Users############
 
         # 3. LDAP-Abfrage
         self.connector.conn.search(
             search_base=self.connector.user_base,
-            search_filter="(objectClass=inetOrgPerson)",
+            search_filter=self.connector.user_filter,
             search_scope=SUBTREE,
             attributes=["uid", "cn", "sn", "givenName", "mail", "fullname"]
         )
@@ -59,12 +61,13 @@ class UserManager:
         for entry in self.connector.conn.entries:
             dn = entry.entry_dn
             school = extract_schoolname(dn)
+            school = school and school.lower()
             cn = entry.cn.value
 
             data = {
-                "cn": cn,
+                "cn": cn.lower(),
                 "name": cn,
-                "sAMAccountName": cn,
+                "sAMAccountName": cn.lower(),
                 "mail": [entry.mail.value],
                 "displayName": entry.fullname.value,
                 "dn": dn,
@@ -80,9 +83,39 @@ class UserManager:
 
         # 5. Cache ersetzen
         self.users = new_users
+        print(f"UserManager: Loaded {len(self.users)} users into RAM")
+
+        ###########schools##############################
+        self.connector.conn.search(
+            search_base="ou=schulen,o=ml3",
+            search_filter="(objectClass=organizationalUnit)",
+            search_scope=LEVEL,
+            attributes=["ou"]
+        )
+        print(self.connector.conn.entries)
+        self.schools=[]
+        data={} 
+        for entry in self.connector.conn.entries:
+            dn=entry.entry_dn
+            ou = extract_schoolname(dn)            
+            data={
+                    "objectClass": ["organizationalUnit"],
+                   "ou": ou,
+                   "name": ou,
+                   "distinguishedName": dn,
+                   "displayName": ou
+                }
+            if ou not in [p.lower() for p in self.connector.excluded_schools]:
+              self.schools.append(data)
+        print(f"UserManager: Loaded {len(self.schools)} schools into RAM")
+
+
+        #################################################
+
+
+
         self.last_sync = time.time()
 
-        print(f"UserManager: Loaded {len(self.users)} users into RAM")
 
     # -----------------------------
     # AUTO REFRESH
@@ -108,4 +141,14 @@ class UserManager:
     def list_users(self):
         self.ensure_fresh()
         return list(self.users.values())
+
+    def get_schools(self):
+        self.ensure_fresh()
+        return self.schools
+    def get_school(self, schulname):
+        self.ensure_fresh()
+        return next((s for s in self.schools if s["name"] == schulname), None)
+
+
+
 

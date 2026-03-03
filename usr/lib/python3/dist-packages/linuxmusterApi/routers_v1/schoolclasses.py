@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse
 from security import RoleChecker, AuthenticatedUser
 #from linuxmusterTools.print import print_schoolclass_list
 #from linuxmusterTools.ldapconnector import LMNLdapReader as lr
+from edirectoryTools.ldapconnector import lr
 #from linuxmusterTools.ldapconnector import LMNSchoolclass
 from utils.checks import get_schoolclass_or_404
 from utils.sophomorix import lmn_getSophomorixValue
