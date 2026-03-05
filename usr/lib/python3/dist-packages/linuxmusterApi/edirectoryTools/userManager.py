@@ -1,6 +1,6 @@
 from ldap3 import Server, Connection, ALL, NTLM, SUBTREE, LEVEL
 from edirectoryTools.edir2lmn_attr import *
-from .pydanticmodels import LMNLDAPUser
+from .pydanticmodels import LMNLDAPUser, LMNSchoolClassModel
 import time
 from threading import Lock
 
@@ -52,9 +52,9 @@ class UserManager:
             search_base=self.connector.user_base,
             search_filter=self.connector.user_filter,
             search_scope=SUBTREE,
-            attributes=["uid", "cn", "sn", "givenName", "mail", "fullname"]
+            attributes=["uid", "cn", "sn", "givenName", "mail", "fullname","groupMembership"]
         )
-
+    
         new_users = {}
 
         # 4. Einträge verarbeiten
@@ -63,7 +63,8 @@ class UserManager:
             school = extract_schoolname(dn)
             school = school and school.lower()
             cn = entry.cn.value
-
+            groupmembership=entry.groupMembership.value or []
+            role= map_role_to_sophomorix(extract_role_ou(dn), dn)
             data = {
                 "cn": cn.lower(),
                 "name": cn,
@@ -74,17 +75,24 @@ class UserManager:
                 "distinguishedName": dn,
                 "sophomorixSchoolname": school,
                 "school": school,
-                "sophomorixRole": map_role_to_sophomorix(extract_role_ou(dn), dn)
-            }
+                "sophomorixRole": role,
+                "sophomorixStatus":"active",
+                "memberOf": groupmembership,
+                "lmnsessions":[],
+                "sophomorixAdminClass": ""
 
+            }
+            #schoolclasses and projects attribute set in model
+            if role=="teacher":
+                data['sophomorixAdminClass']="teachers"
             # WICHTIG: Diese Zeile muss IN der Schleife stehen!
             key = cn.lower()
-            new_users[key] = LMNLDAPUser(data, self.connector)
+            new_users[key] = LMNLDAPUser(data,self.connector)
 
         # 5. Cache ersetzen
         self.users = new_users
         print(f"UserManager: Loaded {len(self.users)} users into RAM")
-
+       # print(self.users)
         ###########schools##############################
         self.connector.conn.search(
             search_base="ou=schulen,o=ml3",
@@ -92,7 +100,7 @@ class UserManager:
             search_scope=LEVEL,
             attributes=["ou"]
         )
-        print(self.connector.conn.entries)
+        #print(self.connector.conn.entries)
         self.schools=[]
         data={} 
         for entry in self.connector.conn.entries:
@@ -110,8 +118,89 @@ class UserManager:
         print(f"UserManager: Loaded {len(self.schools)} schools into RAM")
 
 
-        #################################################
+        #################schoolclasses################################
+        self.schoolclasses={}
+        for school in self.schools:
+           schoolclasses=[]
+        
+           self.connector.conn.search(
+            search_base=f"ou=klassen,ou=gemischt,ou=gruppen,ou={school['ou']},ou=schulen,o=ml3",
+            search_filter="(objectClass=groupofNames)",
+            search_scope=LEVEL,
+            attributes=["cn","member"]
+            )
+          # print(self.connector.conn.entries)
+           data={}
+           
+           for entry in self.connector.conn.entries:
+               dn=entry.entry_dn
+               cn=entry.cn.value
+               lehrerliste=extractLehrerliste(entry.member.values)
+               sophomorixMembers=[dn.split(',')[0][3:].lower() for dn in entry.member.values if dn not in set(lehrerliste)]
 
+               #print(entry.member.value)
+               data={
+                       "objectClass":["groupofNames"],
+                       "cn": cn,
+                       "name": cn,
+                       "displayName": cn,
+                       "dn": dn,
+                       "distinguishedName": dn,
+                       "member": entry.member.values,
+                       "membersCount": len(entry.member.values),
+                       "sophomorixHidden": False,
+                       "sophomorixJoinable": False,
+                       "sophomorixType": "adminclass",
+                       "sophomorixAdmins": lehrerliste,
+                       "sophomorixMembers": sophomorixMembers
+                       
+                    }
+               schoolclasses.append(data)
+             #  print(schoolclasses)
+           self.schoolclasses[school['ou']]=schoolclasses
+ 
+         ##################Projects###########################
+        self.projects={}
+        for school in self.schools:
+           projects=[]
+
+           self.connector.conn.search(
+            search_base=f"ou=projekte,ou={school['ou']},ou=schulen,o=ml3",
+            search_filter="(objectClass=groupofNames)",
+            search_scope=LEVEL,
+            attributes=["cn","member","owner"]
+            )
+           print(self.connector.conn.entries)
+           data={}
+
+           for entry in self.connector.conn.entries:
+               dn=entry.entry_dn
+               cn=entry.cn.value
+               owners = entry.owner.values if isinstance(entry.owner.values, list) else [entry.owner.value]
+               #print(owners)
+               ownerliste=[dn.split(',')[0][3:].lower() for dn in owners]
+              # print(ownerliste)
+               sophomorixMembers=[dn.split(',')[0][3:].lower() for dn in entry.owner.values if dn not in set(ownerliste)]
+               #print(entry.member.value)
+               data={
+                       "objectClass":["groupofNames"],
+                       "cn": cn,
+                       "name": cn,
+                       "displayName": cn,
+                       "dn": dn,
+                       "distinguishedName": dn,
+                       "member": entry.member.values,
+                       "membersCount": len(entry.member.values),
+                       "sophomorixHidden": False,
+                       "sophomorixJoinable": False,
+                       "sophomorixType": "project",
+                       "sophomorixAdmins": ownerliste, 
+                       "sophomorixMembers": sophomorixMembers
+
+                    }
+               projects.append(data)
+               print(data)
+           self.projects[school['ou']]=projects
 
 
         self.last_sync = time.time()
@@ -149,6 +238,21 @@ class UserManager:
         self.ensure_fresh()
         return next((s for s in self.schools if s["name"] == schulname), None)
 
+    def get_schoolclasses(self,school:str | None):
+        
+        if school!="global":
+          #  print(school)
+            return self.schoolclasses[school] #dict for schools
+        return list(self.schoolclasses.values())
+     
+    def get_schoolclass(self, schoolclass, school:str | None):
+        schoolclasses= self.get_schoolclasses(school)
+        result = next((item for item in schoolclasses if item["cn"] == schoolclass), None)
+        print(result)
+        return result
 
-
+    def get_projects(self,school:str | None):
+        if school!="global":
+            return  self.projects[school]
+        return list(self.projects.values())
 

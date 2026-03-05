@@ -107,10 +107,20 @@ class EDirectoryConnector:
     def get_schools(self):
         return self.user_manager.get_schools()
 
+    
+    # ---------------------------------------------------------
+    # SCHOOLCLASSES ()
+    # ---------------------------------------------------------
+    def get_schoolclasses(self,school: str | None):
+        return self.user_manager.get_schoolclasses(school)
+    def get_schoolclass(self,schoolclass: str, school: str | None):
+        return self.user_manager.get_schoolclass(schoolclass, school)
 
-
-
-
+    # ---------------------------------------------------------
+    # PROJECTS ()
+    # ---------------------------------------------------------
+    def get_projects(self,school: str | None):
+        return self.user_manager.get_projects(school)
     # ---------------------------------------------------------
     # GENERISCHE GET-FUNKTIONEN (nutzen automatisch Cache)
     # ---------------------------------------------------------
@@ -121,7 +131,11 @@ class EDirectoryConnector:
            category= parts[0]
            if category == "schools":
              return  self.get_schools()
-           
+           if category == "schoolclasses":
+             return self.get_schoolclasses(school)#schoolspecifresults #globaladmin in school global
+           if category == "projects":
+               return self.get_projects(school) 
+
 
         if len(parts) == 2:
 
@@ -134,6 +148,8 @@ class EDirectoryConnector:
               return self.get_group(name)
            if category == "schools":
               return self.get_school(name)
+           if category == "schoolclasses":
+              return self.get_schoolclass(name,school)
 
         
         raise ValueError(f"Unknown LDAP category: {category}")

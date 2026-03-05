@@ -1,6 +1,11 @@
 from ldap3 import Server, Connection, ALL, NTLM, SUBTREE
 import json
 
+
+
+def extractLehrerliste(members):
+    lehrerlist= [x for x in members if "ou=lehrer" in x.lower()] 
+    return [x.split(',')[0][3:].lower() for x in lehrerlist]
 def extract_schoolname(dn: str) -> str | None:
     parts = [p.strip() for p in dn.split(",")]
 
@@ -10,7 +15,7 @@ def extract_schoolname(dn: str) -> str | None:
     try:
         idx = parts_lower.index("ou=schulen")
     except ValueError:
-        return None
+        return "global"
     # The role OU is the part directly before ou=schulen
     if idx == 0:
         return None  # nothing before it

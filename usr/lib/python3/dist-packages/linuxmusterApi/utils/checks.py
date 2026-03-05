@@ -28,6 +28,7 @@ def get_schoolclass_or_404(schoolclass, who, dict=True):
     :return: Schoolclass details
     """
 
+    schoolclass_data = lr.get(f'/schoolclasses/{schoolclass}', school=who.school, dict=dict)
 
     try:
         schoolclass_data = lr.get(f'/schoolclasses/{schoolclass}', school=who.school, dict=dict)
