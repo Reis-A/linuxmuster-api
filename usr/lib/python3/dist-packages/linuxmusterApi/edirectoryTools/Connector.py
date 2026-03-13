@@ -1,4 +1,5 @@
-from ldap3 import Server, Connection, ALL, NTLM, SUBTREE
+from ldap3 import Server, Connection, Tls, ALL, NTLM, SUBTREE
+import ssl
 import json
 from edirectoryTools.edir2lmn_attr import *
 from .userManager import UserManager
@@ -16,11 +17,11 @@ class EDirectoryConnector:
         self.config = config
 
         # LDAP Server
+        tls_config= Tls(ca_certs_file=config["ca_cert_file"],validate=ssl.CERT_REQUIRED,version=ssl.PROTOCOL_TLS_CLIENT,ciphers='ALL') #cipers=ALL can be removed once OES 25.4 is running
         self.server = Server(
             config["server"],
             get_info=ALL,
-            use_ssl=True,
-            port=636
+            tls=tls_config
         )
 
         # Bind Credentials
@@ -73,7 +74,7 @@ class EDirectoryConnector:
     # ---------------------------------------------------------
     # GRUPPEN (noch direkt LDAP – kann später auch gecacht werden)
     # ---------------------------------------------------------
-
+    ''' 
     def get_group(self, groupname):
         search_filter = self.group_filter.format(groupname=groupname)
 
@@ -99,7 +100,7 @@ class EDirectoryConnector:
             attributes=["cn", "description"]
         )
         return [e.entry_to_json() for e in self.conn.entries]
-
+    '''   
  
     # ---------------------------------------------------------
     # SCHOOLS ()
@@ -144,8 +145,8 @@ class EDirectoryConnector:
            if category == "users":
               return self.get_user(name)
 
-           if category == "groups":
-              return self.get_group(name)
+          # if category == "groups":
+           #   return self.get_group(name)
            if category == "schools":
               return self.get_school(name)
            if category == "schoolclasses":

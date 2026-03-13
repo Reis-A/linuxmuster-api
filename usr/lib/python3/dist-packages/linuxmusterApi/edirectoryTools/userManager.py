@@ -61,10 +61,9 @@ class UserManager:
         for entry in self.connector.conn.entries:
             dn = entry.entry_dn
             school = extract_schoolname(dn)
-            school = school and school.lower()
             cn = entry.cn.value
             groupmembership=entry.groupMembership.value or []
-            role= map_role_to_sophomorix(extract_role_ou(dn), dn)
+            adminclass,role= map_role_to_sophomorix(extract_role_ou(dn), dn)
             data = {
                 "cn": cn.lower(),
                 "name": cn,
@@ -79,12 +78,17 @@ class UserManager:
                 "sophomorixStatus":"active",
                 "memberOf": groupmembership,
                 "lmnsessions":[],
-                "sophomorixAdminClass": ""
-
+                "sophomorixAdminClass": adminclass,
+                "wifi": None,
+                "printing": None,
+                "webfilter":None,
+                "internet":None,
+                "permissions": {"sidebar:view:/view/lmn/users/print-passwords": False}
             }
+            #management groups wifi printing webfilter internet can be used to toggle groupmembership in managementgroup endpoints 
+            #right now this functions are all disabled, here and in the management route of the API
+
             #schoolclasses and projects attribute set in model
-            if role=="teacher":
-                data['sophomorixAdminClass']="teachers"
             # WICHTIG: Diese Zeile muss IN der Schleife stehen!
             key = cn.lower()
             new_users[key] = LMNLDAPUser(data,self.connector)
@@ -136,7 +140,7 @@ class UserManager:
                dn=entry.entry_dn
                cn=entry.cn.value
                lehrerliste=extractLehrerliste(entry.member.values)
-               sophomorixMembers=[dn.split(',')[0][3:].lower() for dn in entry.member.values if dn not in set(lehrerliste)]
+               sophomorixMembers=[dn.split(',')[0][3:].lower() for dn in entry.member.values if dn.split(',')[0][3:].lower() not in set(lehrerliste)]
 
                #print(entry.member.value)
                data={
@@ -147,7 +151,7 @@ class UserManager:
                        "dn": dn,
                        "distinguishedName": dn,
                        "member": entry.member.values,
-                       "membersCount": len(entry.member.values),
+                       "membersCount": len(sophomorixMembers),
                        "sophomorixHidden": False,
                        "sophomorixJoinable": False,
                        "sophomorixType": "adminclass",

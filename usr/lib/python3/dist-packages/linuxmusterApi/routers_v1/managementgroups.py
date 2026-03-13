@@ -6,7 +6,7 @@ from security import RoleChecker, UserListChecker, AuthenticatedUser
 from .body_schemas import UserList
 #from linuxmusterTools.ldapconnector import LMNLdapReader as lr, LMNMgmtGroup
 from edirectoryTools.ldapconnector import lr
-
+#edirectoryTools ManagementGroups (wifi internet...) are deactivated... also in userManager.py set to None
 
 router = APIRouter(
     prefix="/managementgroups",
@@ -36,7 +36,7 @@ def get_management_groups_list(who: AuthenticatedUser = Depends(RoleChecker("GST
     """
 
 
-    return lr.getval('/managementgroups', 'cn', school=who.school)
+    #return lr.getval('/managementgroups', 'cn', school=who.school)
 
 @router.get("/{group}", name="Get details of a specific management group")
 def get_group_details(group: str, who: AuthenticatedUser = Depends(RoleChecker("GS"))):
@@ -60,11 +60,11 @@ def get_group_details(group: str, who: AuthenticatedUser = Depends(RoleChecker("
     """
 
 
-    group_details = lr.get(f'/managementgroups/{group}', school=who.school)
+    #group_details = lr.get(f'/managementgroups/{group}', school=who.school)
 
     if group_details:
         return group_details
-
+    return []
     raise HTTPException(status_code=404, detail=f"Management group {group} not found.")
 
 @router.delete("/{group}/members", status_code=204, name="Remove users from a specific management group")
@@ -94,10 +94,11 @@ def remove_user_from_group(group: str, userlist: UserList, who: AuthenticatedUse
         # Nothing to do
         raise HTTPException(status_code=400, detail=f"Missing userlist of members to delete")
 
-    group_details = lr.get(f'/managementgroups/{group}', school=who.school)
-
+  #  group_details = lr.get(f'/managementgroups/{group}', school=who.school)
+    group_details=None
     if not group_details:
-        raise HTTPException(status_code=404, detail=f"Management group {group} not found.")
+        return []
+        #raise HTTPException(status_code=404, detail=f"Management group {group} not found.")
 
     for member in userlist.users:
         try:
@@ -139,10 +140,11 @@ def add_user_to_group(group: str, userlist: UserList, who: AuthenticatedUser = D
         # Nothing to do
         raise HTTPException(status_code=400, detail=f"Missing userlist of members to add")
 
-    group_details = lr.get(f'/managementgroups/{group}', school=who.school)
-
+   # group_details = lr.get(f'/managementgroups/{group}', school=who.school)
+    group_details=None
     if not group_details:
-        raise HTTPException(status_code=404, detail=f"Management group {group} not found.")
+         return []
+      #  raise HTTPException(status_code=404, detail=f"Management group {group} not found.")
 
     for member in userlist.users:
         try:

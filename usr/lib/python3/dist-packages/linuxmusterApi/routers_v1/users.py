@@ -7,11 +7,12 @@ from edirectoryTools.ldapconnector import lr
 
 #from linuxmusterTools.ldapconnector import LMNUser, LMNStudent
 #from linuxmusterTools.samba_util import UserManager
+from edirectoryTools.edir_util import UserManager
 #import linuxmusterTools.quotas
 from utils.checks import get_user_or_404
 
 
-#user_manager = UserManager()
+user_manager = UserManager()
 
 router = APIRouter(
     prefix="/users",
@@ -203,7 +204,6 @@ def set_current_user_password(user: str, password: SetCurrentPassword, who: Auth
     :param who: User requesting the data, read from API Token
     :type who: AuthenticatedUser
     """
-
 
     get_user_or_404(user, who.school)
 

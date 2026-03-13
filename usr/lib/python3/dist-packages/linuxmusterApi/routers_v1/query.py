@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from security import RoleChecker, AuthenticatedUser
 #from linuxmusterTools.ldapconnector import LMNLdapReader as lr
-
+from edirectoryTools.ldapconnector import lr
 
 router = APIRouter(
     prefix="/query",

@@ -12,16 +12,16 @@ def extract_schoolname(dn: str) -> str | None:
     # Normalize to lowercase for comparison
     parts_lower = [p.lower() for p in parts]
     # Find index of ou=benutzer
-    try:
-        idx = parts_lower.index("ou=schulen")
-    except ValueError:
+    if "ou=global" in parts_lower:
         return "global"
+    if "ou=schulen" in parts_lower:
+        idx = parts_lower.index("ou=schulen")
     # The role OU is the part directly before ou=schulen
-    if idx == 0:
-        return None  # nothing before it
-    if parts_lower[idx - 1].startswith("ou="):
-      return parts_lower[idx - 1][3:]  # remove ou= return lowercase
-
+        if idx == 0:
+           return None  # nothing before it
+        if parts_lower[idx - 1].startswith("ou="):
+           return parts_lower[idx - 1][3:]  # remove ou= return lowercase
+ 
     return None
 
 
@@ -34,28 +34,26 @@ def extract_role_ou(dn: str) -> str | None:
     parts_lower = [p.lower() for p in parts]
 
     # Find index of ou=benutzer
-    try:
+    if "ou=benutzer" in parts_lower:
         idx = parts_lower.index("ou=benutzer")
-    except ValueError:
-        return None
 
     # The role OU is the part directly before ou=benutzer
-    if idx == 0:
-        return None  # nothing before it
+        if idx == 0:
+           return None  # nothing before it
 
-    role_part = parts[idx - 1]  # original casing preserved
+        role_part = parts[idx - 1]  # original casing preserved
 
     # Expecting something like "ou=Lehrer"
-    if role_part.lower().startswith("ou="):
-        return role_part[3:]  # remove "ou="
+        if role_part.lower().startswith("ou="):
+            return role_part[3:]  # remove "ou="
 
     return None
 
-
+#returns role and adminclass
 def map_role_to_sophomorix(role_ou: str | None, dn: str) -> str | None:
     dn_lower = dn.lower()
     if ( "ou=global" in dn_lower and "o=ml3" in dn_lower ):
-        return "globaladministrator"
+        return "global-admins", "globaladministrator"
 # 2. Normal school roles if role_ou is None: return None
 
 
@@ -63,15 +61,20 @@ def map_role_to_sophomorix(role_ou: str | None, dn: str) -> str | None:
         return None
 
     r = role_ou.lower()
-
+    
     if r in ("lehrer"):
-        return "teacher"
+        return "teachers","teacher"
     if r in ("schueler"):
-        return "student"
+       # print(dn)
+        parts=[p.strip() for p in dn.split(",")]
+       # print(parts)
+        idx=parts.index("ou=Schueler")
+        adminclass=parts[idx-1][3:]
+        return adminclass,"student"
     if r in ("verwalter", ""):
-        return "schooladministrator"
+        return "schooladministrators","schooladministrator"
     if r in ("pruefungen"):
-        return "examuser"
+        return "examusers","examuser"
     return "unknown"
 
 
